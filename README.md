@@ -13,3 +13,11 @@ $ /Applications/RhinoWIP.app/Contents/Resources/bin/yak install ghwebsocketserve
 
 - `StartWebsocketServer`: Starts or stop websocket server with specific host and port
 ![image](https://user-images.githubusercontent.com/317202/78679953-c918a900-78e2-11ea-9a30-34f75eb66fc9.png)
+
+### Server spec
+
+If you send the message like below to the server, it will broadcast the contents of `data` to all the other connected socket.
+
+```
+{"action": "broadcast", "data": { "value": "hi" }}
+```
