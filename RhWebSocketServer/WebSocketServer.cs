@@ -9,8 +9,7 @@ namespace RhWebSocketServer
     {
         private static readonly WebSocketServerSingleton instance = new WebSocketServerSingleton();
         private WebSocketServer websocketServer;
-        private BlockingCollection<IWebSocketConnection> sockets = new BlockingCollection<IWebSocketConnection>();
-
+        public ConcurrentDictionary<Guid, IWebSocketConnection> sockets = new ConcurrentDictionary<Guid, IWebSocketConnection>();
         static WebSocketServerSingleton()
         {
         }
@@ -64,28 +63,62 @@ namespace RhWebSocketServer
             websocketServer.Start(socket =>
             {
                 config(socket);
+                socket.OnError = (err) => {
+                    IWebSocketConnection removingSocket;
+                    sockets.TryRemove(socket.ConnectionInfo.Id, out removingSocket);
+                };
                 socket.OnClose = () => {
                     IWebSocketConnection removingSocket;
-                    sockets.TryTake(out removingSocket);
+                    sockets.TryRemove(socket.ConnectionInfo.Id, out removingSocket);
                 };
-                sockets.TryAdd(socket);
+                socket.OnOpen = () =>
+                {
+                    Console.WriteLine("Open socket");
+                    sockets.TryAdd(socket.ConnectionInfo.Id, socket);
+                };
             });
         }
+
 
         public void Broadcast(string message, IWebSocketConnection skippingSocket = null)
         {
 
-            foreach(var socket in sockets)
+            foreach (var item in sockets)
             {
-                if (socket != skippingSocket) socket.Send(message);
+                var socket = item.Value;
+                if (socket != skippingSocket)
+                {
+                    if (socket.IsAvailable)
+                    {
+                        socket.Send(message);
+                    } else
+                    {
+                        IWebSocketConnection removingSocket;
+                        sockets.TryRemove(socket.ConnectionInfo.Id, out removingSocket);
+                        socket.Close();
+                    }
+                }
             }
         }
 
         public void Broadcast(byte[] message, IWebSocketConnection skippingSocket = null)
         {
-            foreach (var socket in sockets)
+            foreach (var item in sockets)
             {
-                if (socket != skippingSocket) socket.Send(message);
+                var socket = item.Value;
+                if (socket != skippingSocket)
+                {
+                    if (socket.IsAvailable)
+                    {
+                        socket.Send(message);
+                    }
+                    else
+                    {
+                        IWebSocketConnection removingSocket;
+                        sockets.TryRemove(socket.ConnectionInfo.Id, out removingSocket);
+                        socket.Close();
+                    }
+                }
             }
         }
     }
