@@ -13,7 +13,7 @@
   <ItemGroup>
     <PackageReference Include="RhinoCommon" Version="7.0.19197.10155-wip" IncludeAssets="compile;build" />
     <PackageReference Include="Fleck" Version="1.1.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
   
 </Project>
